@@ -24,21 +24,22 @@ def plot_confusion_matrix(y_true, X_test, svm):
     plt.show()
 
 #load dataframe
-df = pd.read_csv('features.csv')
-feature_vectors = df.drop('label', axis=1).values
-labels = df['label'].values
-
-X = np.array(feature_vectors)  # Feature vectors
-y = np.array(labels)  # Labels for the seeds
-X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
-
-# Normalize features and train SVM
-svm = make_pipeline(StandardScaler(), SVC(kernel='linear'))
-svm.fit(X_train, y_train)
-
-
-accuracy = svm.score(X_test, y_test)
-print(f'Accuracy: {accuracy}')
-plot_confusion_matrix(y_test, X_test, svm)
-
-joblib.dump(svm, 'svm_model.pkl')
+if __name__ == '__main__':
+    df = pd.read_csv('features.csv')
+    feature_vectors = df.drop('label', axis=1).values
+    labels = df['label'].values
+    
+    X = np.array(feature_vectors)  # Feature vectors
+    y = np.array(labels)  # Labels for the seeds
+    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+    
+    # Normalize features and train SVM
+    svm = make_pipeline(StandardScaler(), SVC(kernel='linear'))
+    svm.fit(X_train, y_train)
+    
+    
+    accuracy = svm.score(X_test, y_test)
+    print(f'Accuracy: {accuracy}')
+    plot_confusion_matrix(y_test, X_test, svm)
+    
+    joblib.dump(svm, 'svm_model.pkl')

@@ -5,10 +5,23 @@ from sklearn.preprocessing import StandardScaler
 from sklearn.pipeline import make_pipeline
 import pandas as pd
 from feature_extraction import extract_feature
+from sklearn.metrics import confusion_matrix
+import matplotlib.pyplot as plt
 import random
 import os
 import joblib
-# Example data
+
+def plot_confusion_matrix(y_true, X_test, svm):
+    y_pred = svm.predict(X_test)
+    cm = confusion_matrix(y_true, y_pred)
+    plt.matshow(cm, cmap='Blues')
+    plt.colorbar()
+    plt.xlabel('Predicted')
+    plt.ylabel('True')
+    plt.title('Confusion Matrix')
+    plt.xticks(range(len(set(y_true))), set(y_true))
+    plt.yticks(range(len(set(y_true))), set(y_true))
+    plt.show()
 
 #load dataframe
 df = pd.read_csv('features.csv')
@@ -26,5 +39,6 @@ svm.fit(X_train, y_train)
 
 accuracy = svm.score(X_test, y_test)
 print(f'Accuracy: {accuracy}')
+plot_confusion_matrix(y_test, X_test, svm)
 
 joblib.dump(svm, 'svm_model.pkl')

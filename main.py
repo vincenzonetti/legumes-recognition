@@ -23,9 +23,6 @@ if __name__ == '__main__':
     #filter out contours with area outside the range
     filtered_contours = [cnt for cnt in contours if cv2.contourArea(cnt) >= min_area and cv2.contourArea(cnt) <= max_area]
     #visualize contours
-    
-
-    
     seed_features = []
     for cnt in filtered_contours:
     # Compute features for each seed

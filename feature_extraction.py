@@ -9,6 +9,7 @@ def touches_border(contour, img_width, img_height):
 
 def extract_feature(img):
     #thresh = cv.adaptiveThreshold(imgGrey, 255, cv.ADAPTIVE_THRESH_MEAN_C, cv.THRESH_BINARY, 11, 2)
+    grey = cv.cvtColor(img, cv.COLOR_BGR2GRAY)
     contours = compute_contours(img)
     cnt = contours[0]
     area = cv.contourArea(cnt)
@@ -16,7 +17,7 @@ def extract_feature(img):
     x, y, w, h = cv.boundingRect(cnt)
     aspect_ratio = w / h
     circularity = (4 * 3.1415 * area) / (perimeter ** 2)
-    mask = np.zeros(img.shape, np.uint8)
+    mask = np.zeros(grey.shape, np.uint8)
     cv.drawContours(mask, [cnt], -1, 255, -1)
     mean_color = cv.mean(img, mask=mask)
     feature_dict = {

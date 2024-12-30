@@ -31,7 +31,7 @@ if __name__ == '__main__':
     
     X = np.array(feature_vectors)  # Feature vectors
     y = np.array(labels)  # Labels for the seeds
-    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.3, random_state=42)
     
     # Normalize features and train SVM
     svm = make_pipeline(StandardScaler(), SVC(kernel='linear'))

@@ -2,6 +2,7 @@ import numpy as np
 import cv2 as cv
 import os
 import pandas as pd
+from tqdm.auto import tqdm
 # Function to check if contour touches border
 def touches_border(contour, img_width, img_height):
     x, y, w, h = cv.boundingRect(contour)
@@ -103,12 +104,12 @@ if __name__ == '__main__':
     #filter out files
     subdirectories = [subdir for subdir in subdirectories if os.path.isdir(os.path.join(PATH, subdir))]
     
-    for subdir in subdirectories:
+    for subdir in tqdm(subdirectories,desc='Processing Folder', position=0):
         if subdir == 'Test':
             continue
         images = os.listdir(os.path.join(PATH, subdir))
         images = [img for img in images if img.endswith('.jpg')]
-        for filename in images:
+        for filename in tqdm(images,desc='Processing Image', position=1):
             
             file_path = os.path.join(PATH, subdir, filename)
             img=cv.imread(file_path)

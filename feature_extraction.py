@@ -44,8 +44,12 @@ def compute_crop_and_keypoints(img):
     #img = cv.drawKeypoints(img, keypoints, None)
     #crop the area around most important keypoint
     keypoints = sorted(keypoints, key=lambda x: x.response, reverse=True)
-    x, y = keypoints[0].pt
-    x, y = int(x), int(y)
+    try:
+        x, y = keypoints[0].pt
+        x, y = int(x), int(y)
+    except IndexError:
+        #x,y in the image center
+        x, y = 250, 250
     h, w = 100, 100
     crop = img[y-h:y+h, x-w:x+w]
     #key points and descriptors on the cropped image
@@ -55,6 +59,7 @@ def compute_crop_and_keypoints(img):
     img = cv.drawKeypoints(crop, keypoints, None)
     num_keypoints = len(keypoints)
     avg_keypoint_size = np.mean([keypoint.size for keypoint in keypoints])
+    if(num_keypoints == 0): avg_keypoint_size = 0
     if(descriptors is None):
         descriptor_mean = 0
         descriptor_std = 0

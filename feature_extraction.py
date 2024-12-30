@@ -12,6 +12,10 @@ def extract_feature(img):
     grey = cv.cvtColor(img, cv.COLOR_BGR2GRAY)
     contours = compute_contours(img)
     cnt = contours[0]
+    #cv.drawContours(img, [cnt], -1, (0, 255, 0), 3)
+    #cv.imshow('contour', img)
+    #cv.waitKey(0)
+    #cv.destroyAllWindows()
     area = cv.contourArea(cnt)
     perimeter = cv.arcLength(cnt, True)
     x, y, w, h = cv.boundingRect(cnt)

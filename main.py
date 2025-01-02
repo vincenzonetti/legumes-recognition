@@ -105,7 +105,7 @@ if __name__ == '__main__':
         axs = fig.subplot_mosaic(
     [["img", "bounding"], ["historgram", "historgram"]],
     gridspec_kw={"height_ratios": [2, 1]}  # Two rows: images get more space
-)
+        )
         axs['img'].imshow(cv2.cvtColor(img, cv2.COLOR_BGR2RGB))
         axs['img'].set_title('Original image')
         axs['img'].axis('off')

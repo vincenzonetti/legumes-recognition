@@ -13,10 +13,6 @@ def extract_feature(img):
     grey = cv.cvtColor(img, cv.COLOR_BGR2GRAY)
     contours = compute_contours(img)
     cnt = contours[0]
-    #cv.drawContours(img, [cnt], -1, (0, 255, 0), 3)
-    #cv.imshow('contour', img)
-    #cv.waitKey(0)
-    #cv.destroyAllWindows()
     area = cv.contourArea(cnt)
     perimeter = cv.arcLength(cnt, True)
     x, y, w, h = cv.boundingRect(cnt)
@@ -37,7 +33,6 @@ def extract_feature(img):
     return feature_dict
 
 def compute_crop_and_keypoints(img):
-    img = cv.resize(img, (500, 500))
     gray = cv.cvtColor(img, cv.COLOR_BGR2GRAY)
     sift = cv.SIFT_create()
     keypoints, descriptors = sift.detectAndCompute(gray, None)
@@ -80,7 +75,7 @@ def compute_contours(img):
     grey = cv.cvtColor(img, cv.COLOR_BGR2GRAY)
     height, width = grey.shape
 
-    clahe = cv.createCLAHE(clipLimit=2.0, tileGridSize=(8, 8))
+    clahe = cv.createCLAHE(clipLimit=5.0, tileGridSize=(8, 8))
     img_clahe = clahe.apply(grey)
     
     treshold = cv.Canny(img_clahe,100,150)
@@ -92,6 +87,10 @@ def compute_contours(img):
     filtered_contours = [cnt for cnt in contours if not touches_border(cnt, width, height)]
     sorted_contours = sorted(filtered_contours, key=lambda c: cv.contourArea(cv.convexHull(c)), reverse=True)
 
+    #cv.drawContours(img, sorted_contours[0], -1, (0, 255, 0), 3)
+    #cv.imshow('contours', img)
+    #cv.waitKey(0)
+    #cv.destroyAllWindows()
     return sorted_contours
     
 if __name__ == '__main__':
@@ -110,9 +109,9 @@ if __name__ == '__main__':
         images = os.listdir(os.path.join(PATH, subdir))
         images = [img for img in images if img.endswith('.jpg')]
         for filename in tqdm(images,desc='Processing Image', position=1):
-            
             file_path = os.path.join(PATH, subdir, filename)
             img=cv.imread(file_path)
+            img = cv.resize(img, (500, 500))
             
             crop, feature_dict = compute_crop_and_keypoints(img)
             feature_dict = {**feature_dict, **extract_feature(crop)}

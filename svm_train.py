@@ -29,8 +29,8 @@ def plot_confusion_matrix(y_true, X_test, svm):
     plt.yticks(range(len(set(y_true))), set(y_true))
     plt.show()
 
-def train_svm(X_train, y_train, kernel='linear'):
-    svm = make_pipeline(StandardScaler(), SVC(kernel=kernel))
+def train_svm(X_train, y_train, kernel='linear', C=1, gamma='scale'):
+    svm = make_pipeline(StandardScaler(), SVC(kernel=kernel, C=1))
     svm.fit(X_train, y_train)
     return svm
 
@@ -65,21 +65,37 @@ def plot_decision_boundaries(X_train, y_train, svm):
     plt.show()
 
 
+def grid_search_best_parameters(X_train,y_train):
+    C_range = [1e-2, 1, 1e2]
+    gamma_range = [1e-1, 1, 1e1]
+    kernel_range = ['linear', 'rbf', 'poly', 'sigmoid']
+    best_accuracy = 0
+    results = {}
+    for C in C_range:
+        for gamma in gamma_range:
+            for kernel in kernel_range:
+                svm = train_svm(X_train, y_train, C=C, gamma=gamma, kernel=kernel)
+                accuracy = svm.score(X_test, y_test)
+                results[(C, gamma, kernel)] = accuracy
+    #sort the results by accuracy
+    sorted_results = sorted(results.items(), key=lambda x: x[1], reverse=True)
+    return sorted_results
+
 if __name__ == '__main__':
     df = pd.read_csv('features.csv')
     feature_vectors = df.drop('label', axis=1).values
     labels = df['label'].values
-    USE_PCA = True
+    USE_PCA = False
     PCA_COMPONENTS = 5
     X = np.array(feature_vectors)  # Feature vectors
     y = np.array(labels)  # Labels for the seeds
     X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
-    kernel = 'linear'
+    kernel = 'rbf'
     if USE_PCA:
         pca = PCA(n_components=PCA_COMPONENTS)
         X_train = pca.fit_transform(X_train)
         X_test = pca.transform(X_test)
-    
+
     svm = train_svm(X_train, y_train,kernel=kernel)
     #svm = joblib.load('svm_model.pkl')
     accuracy = svm.score(X_test, y_test)

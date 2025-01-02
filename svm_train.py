@@ -90,13 +90,14 @@ if __name__ == '__main__':
     X = np.array(feature_vectors)  # Feature vectors
     y = np.array(labels)  # Labels for the seeds
     X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
-    kernel = 'rbf'
+    kernel = 'linear'
     if USE_PCA:
         pca = PCA(n_components=PCA_COMPONENTS)
         X_train = pca.fit_transform(X_train)
         X_test = pca.transform(X_test)
 
     svm = train_svm(X_train, y_train,kernel=kernel)
+    joblib.dump(svm, 'svm_model.pkl')
     #svm = joblib.load('svm_model.pkl')
     accuracy = svm.score(X_test, y_test)
     print(f'Accuracy: {accuracy}')
@@ -105,4 +106,4 @@ if __name__ == '__main__':
     #PCA_plot_data(X_train,y_train)
     plot_decision_boundaries(X_train, y_train, svm)
     
-    joblib.dump(svm, 'svm_model.pkl')
+    

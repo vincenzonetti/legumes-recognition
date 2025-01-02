@@ -58,6 +58,36 @@ def extract_contour_features(img,contour):
     }
     return feature_dict
 
+def remove_nested_bounding_boxes(contours):
+    nested_contours = set()
+
+    # Get bounding boxes for all contours
+    bounding_boxes = [cv2.boundingRect(cnt) for cnt in contours]
+
+    for i, box1 in enumerate(bounding_boxes):
+        x1, y1, w1, h1 = box1
+        x1_end, y1_end = x1 + w1, y1 + h1
+
+        for j, box2 in enumerate(bounding_boxes):
+            if i != j:  # Avoid self-comparison
+                x2, y2, w2, h2 = box2
+                x2_end, y2_end = x2 + w2, y2 + h2
+
+                # Check if box2 is completely inside box1
+                if (
+                    x2 >= x1 and y2 >= y1 and
+                    x2_end <= x1_end and y2_end <= y1_end
+                ):
+                    nested_contours.add(j)  # Mark contour j as nested
+
+    # Remove nested contours
+    filtered_contours = [
+        cnt for idx, cnt in enumerate(contours) if idx not in nested_contours
+    ]
+
+    return filtered_contours
+
+
 def get_contours(img):
     gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
     blurred = cv2.GaussianBlur(gray, (11, 11), 0)
@@ -65,11 +95,27 @@ def get_contours(img):
     blurred, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY_INV, 11, 2
     )
     contours, _ = cv2.findContours(binary_img, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
-    filtered_contours = [cnt for cnt in contours if cv2.contourArea(cnt) >= min_area and cv2.contourArea(cnt) <= max_area]
-    if len(filtered_contours) < 2: 
-        contours, _ = cv2.findContours(binary_img, cv2.RETR_LIST, cv2.CHAIN_APPROX_SIMPLE)
-        filtered_contours = [cnt for cnt in contours if cv2.contourArea(cnt) >= min_area and cv2.contourArea(cnt) <= max_area]
-    
+    filtered_contours = []
+    for cnt in contours:
+        area = cv2.contourArea(cnt)
+        if min_area <= area <= max_area:
+            filtered_contours.append(cnt)  # Keep contours within area range
+        elif area > max_area:
+            # Reapply contouring for larger areas using cv2.RETR_LIST
+            x, y, w, h = cv2.boundingRect(cnt)
+            region_of_interest = binary_img[y:y+h, x:x+w]  # Extract region of interest
+            
+            # Second pass contouring
+            secondary_contours, _ = cv2.findContours(
+                region_of_interest, cv2.RETR_LIST, cv2.CHAIN_APPROX_SIMPLE
+            )
+            secondary_contours = [scnt for scnt in secondary_contours if cv2.contourArea(scnt) <= max_area and cv2.contourArea(scnt) >= min_area]
+            # Adjust coordinates back to the original image
+            for scnt in secondary_contours:
+                scnt[:, 0, 0] += x  # Adjust x-coordinates
+                scnt[:, 0, 1] += y  # Adjust y-coordinates
+                filtered_contours.append(scnt)
+    filtered_contours = remove_nested_bounding_boxes(filtered_contours)  
     return filtered_contours
 
 def compute_informations(img):
@@ -104,7 +150,7 @@ if __name__ == '__main__':
     
     for file in testFiles:
         img = cv2.imread(os.path.join(FOLDER, file))
-        img = cv2.resize(img, (800, 600))
+        img = cv2.resize(img, (500, 500))
         #crop image pixels on borders by 10%
         img = img[20:-20, 20:-20]
         bounding_box_img, label_counter =compute_informations(img.copy())

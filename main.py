@@ -58,16 +58,22 @@ def extract_contour_features(img,contour):
     }
     return feature_dict
 
-def compute_informations(img):
+def get_contours(img):
     gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
     blurred = cv2.GaussianBlur(gray, (11, 11), 0)
-
     binary_img = cv2.adaptiveThreshold(
     blurred, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY_INV, 11, 2
     )
     contours, _ = cv2.findContours(binary_img, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
-    #sort them by area and filter out the ones that are too small or too big
     filtered_contours = [cnt for cnt in contours if cv2.contourArea(cnt) >= min_area and cv2.contourArea(cnt) <= max_area]
+    if len(filtered_contours) < 2: 
+        contours, _ = cv2.findContours(binary_img, cv2.RETR_LIST, cv2.CHAIN_APPROX_SIMPLE)
+        filtered_contours = [cnt for cnt in contours if cv2.contourArea(cnt) >= min_area and cv2.contourArea(cnt) <= max_area]
+    
+    return filtered_contours
+
+def compute_informations(img):
+    filtered_contours = get_contours(img)
     label_counter = {}
     for cnt in filtered_contours:
         x,y, w, h = cv2.boundingRect(cnt)
@@ -99,12 +105,14 @@ if __name__ == '__main__':
     for file in testFiles:
         img = cv2.imread(os.path.join(FOLDER, file))
         img = cv2.resize(img, (800, 600))
+        #crop image pixels on borders by 10%
+        img = img[20:-20, 20:-20]
         bounding_box_img, label_counter =compute_informations(img.copy())
         #make figure have the same height as the image
         fig = plt.figure(figsize=(10, 6))
         axs = fig.subplot_mosaic(
-    [["img", "bounding"], ["historgram", "historgram"]],
-    gridspec_kw={"height_ratios": [2, 1]}  # Two rows: images get more space
+            [["img", "bounding"], ["historgram", "historgram"]],
+            gridspec_kw={"height_ratios": [2, 1]}  # Two rows: images get more space
         )
         axs['img'].imshow(cv2.cvtColor(img, cv2.COLOR_BGR2RGB))
         axs['img'].set_title('Original image')

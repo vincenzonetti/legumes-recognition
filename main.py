@@ -90,10 +90,13 @@ def remove_nested_bounding_boxes(contours):
 
 def get_contours(img):
     gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
-    blurred = cv2.GaussianBlur(gray, (11, 11), 0)
-    binary_img = cv2.adaptiveThreshold(
-    blurred, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY_INV, 11, 2
-    )
+    clahe = cv2.createCLAHE(clipLimit=5.0, tileGridSize=(8, 8))
+    blurred = cv2.bilateralFilter(gray, d=5, sigmaColor=20, sigmaSpace=30)
+    img_clahe = clahe.apply(blurred)
+    
+    binary_img = cv2.Canny(img_clahe,100,150)
+    #binary_img = cv2.adaptiveThreshold(img_clahe, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY_INV, 11, 2)
+
     contours, _ = cv2.findContours(binary_img, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
     filtered_contours = []
     for cnt in contours:

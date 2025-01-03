@@ -77,7 +77,8 @@ def compute_contours(img):
     height, width = grey.shape
 
     clahe = cv.createCLAHE(clipLimit=5.0, tileGridSize=(8, 8))
-    img_clahe = clahe.apply(grey)
+    blur = cv.bilateralFilter(grey, d=5, sigmaColor=20, sigmaSpace=30)
+    img_clahe = clahe.apply(blur)
     
     treshold = cv.Canny(img_clahe,100,150)
     #check if all edges are 0
@@ -119,5 +120,8 @@ if __name__ == '__main__':
             for key in feature_dict:
                 feature_dict[key] = round(feature_dict[key], 2)
             new_row = {'label': subdir, **feature_dict}
-            df = pd.concat([df, pd.DataFrame([new_row])])
+            #check if df is empty
+            if df.empty:
+                df = pd.DataFrame([new_row])
+            else: df = pd.concat([df, pd.DataFrame([new_row])])
     df.to_csv('features.csv', index=False)

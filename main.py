@@ -18,8 +18,9 @@ def compute_keypoints_features(img_crop):
     except IndexError:
         x, y = h//2, w//2
     num_keypoints = len(keypoints)
-    avg_keypoint_size = np.mean([keypoint.size for keypoint in keypoints])
+    
     if(num_keypoints == 0): avg_keypoint_size = 0
+    else: avg_keypoint_size = np.mean([keypoint.size for keypoint in keypoints]) 
     if(descriptors is None):
         descriptor_mean = 0
         descriptor_std = 0

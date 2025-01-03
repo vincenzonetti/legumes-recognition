@@ -90,7 +90,7 @@ if __name__ == '__main__':
     X = np.array(feature_vectors)  # Feature vectors
     y = np.array(labels)  # Labels for the seeds
     X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
-    kernel = 'linear'
+    kernel = 'rbf'
     if USE_PCA:
         pca = PCA(n_components=PCA_COMPONENTS)
         X_train = pca.fit_transform(X_train)

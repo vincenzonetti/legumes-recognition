@@ -54,8 +54,9 @@ def compute_crop_and_keypoints(img):
 
     img = cv.drawKeypoints(crop, keypoints, None)
     num_keypoints = len(keypoints)
-    avg_keypoint_size = np.mean([keypoint.size for keypoint in keypoints])
+    
     if(num_keypoints == 0): avg_keypoint_size = 0
+    else: avg_keypoint_size = np.mean([keypoint.size for keypoint in keypoints])
     if(descriptors is None):
         descriptor_mean = 0
         descriptor_std = 0
@@ -86,8 +87,7 @@ def compute_contours(img):
 
     filtered_contours = [cnt for cnt in contours if not touches_border(cnt, width, height)]
     sorted_contours = sorted(filtered_contours, key=lambda c: cv.contourArea(cv.convexHull(c)), reverse=True)
-
-    #cv.drawContours(img, sorted_contours[0], -1, (0, 255, 0), 3)
+    #img = cv.drawContours(img, sorted_contours[:1], -1, (0, 255, 0), 3)
     #cv.imshow('contours', img)
     #cv.waitKey(0)
     #cv.destroyAllWindows()

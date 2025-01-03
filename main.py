@@ -88,7 +88,7 @@ def remove_nested_bounding_boxes(contours):
 
     return filtered_contours
 
-def get_contours(img):
+def get_contours(img=None, min_area=100, max_area=1000):
     gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
     clahe = cv2.createCLAHE(clipLimit=5.0, tileGridSize=(8, 8))
     blurred = cv2.bilateralFilter(gray, d=5, sigmaColor=20, sigmaSpace=30)
@@ -121,8 +121,8 @@ def get_contours(img):
     filtered_contours = remove_nested_bounding_boxes(filtered_contours)  
     return filtered_contours
 
-def compute_informations(img):
-    filtered_contours = get_contours(img)
+def compute_informations(img,min_area=100,max_area=1000,svm=None,df=None):
+    filtered_contours = get_contours(img=img, min_area=min_area, max_area=max_area)
     label_counter = {}
     for cnt in filtered_contours:
         x,y, w, h = cv2.boundingRect(cnt)

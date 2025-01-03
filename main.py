@@ -87,7 +87,6 @@ def remove_nested_bounding_boxes(contours):
 
     return filtered_contours
 
-
 def get_contours(img):
     gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
     blurred = cv2.GaussianBlur(gray, (11, 11), 0)
@@ -138,7 +137,6 @@ def compute_informations(img):
     return bounding_box_img, label_counter
 
     
-
 if __name__ == '__main__':
     FOLDER = 'SIV_dataset/Test'
     testFiles = os.listdir(FOLDER)

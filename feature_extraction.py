@@ -8,11 +8,10 @@ def touches_border(contour, img_width, img_height):
     x, y, w, h = cv.boundingRect(contour)
     return x == 0 or y == 0 or x + w >= img_width or y + h >= img_height
 
-def extract_feature(img):
+def extract_contour_features(img=None,contour=None):
     #thresh = cv.adaptiveThreshold(imgGrey, 255, cv.ADAPTIVE_THRESH_MEAN_C, cv.THRESH_BINARY, 11, 2)
     grey = cv.cvtColor(img, cv.COLOR_BGR2GRAY)
-    contours = compute_contours(img)
-    cnt = contours[0]
+    cnt = contour
     area = cv.contourArea(cnt)
     perimeter = cv.arcLength(cnt, True)
     x, y, w, h = cv.boundingRect(cnt)
@@ -32,7 +31,7 @@ def extract_feature(img):
         }
     return feature_dict
 
-def compute_crop_and_keypoints(img):
+def compute_crop_and_keypoints(img=None,blur=None,gray=None):
     gray = cv.cvtColor(img, cv.COLOR_BGR2GRAY)
     sift = cv.SIFT_create()
     keypoints, descriptors = sift.detectAndCompute(gray, None)
@@ -52,7 +51,7 @@ def compute_crop_and_keypoints(img):
     gray = cv.cvtColor(crop, cv.COLOR_BGR2GRAY)
     keypoints, descriptors = sift.detectAndCompute(gray, None)
 
-    img = cv.drawKeypoints(crop, keypoints, None)
+    #img = cv.drawKeypoints(crop, keypoints, None)
     num_keypoints = len(keypoints)
     
     if(num_keypoints == 0): avg_keypoint_size = 0
@@ -113,9 +112,11 @@ if __name__ == '__main__':
             file_path = os.path.join(PATH, subdir, filename)
             img=cv.imread(file_path)
             img = cv.resize(img, (500, 500))
-            
+            gray = cv.cvtColor(img, cv.COLOR_BGR2GRAY)            
             crop, feature_dict = compute_crop_and_keypoints(img)
-            feature_dict = {**feature_dict, **extract_feature(crop)}
+            contours = compute_contours(crop)
+            contorus_features = extract_contour_features(crop,contours[0])
+            feature_dict = {**feature_dict, **contorus_features}
 
             for key in feature_dict:
                 feature_dict[key] = round(feature_dict[key], 2)

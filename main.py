@@ -4,6 +4,7 @@ import os
 import pandas as pd
 import joblib
 import matplotlib.pyplot as plt
+from feature_extraction import extract_contour_features
 
 def compute_keypoints_features(img_crop):
     #img_crop = cv2.resize(img_crop, (50, 50))
@@ -36,18 +37,19 @@ def compute_keypoints_features(img_crop):
     }
     return feature_dict
 
-def extract_contour_features(img,contour):
-    area = cv2.contourArea(contour)
-    perimeter = cv2.arcLength(contour, True)
-    x, y, w, h = cv2.boundingRect(contour)
-    aspect_ratio = w / h
-    circularity = (4 * 3.1415 * area) / (perimeter ** 2)
-    grey = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
-    mask = np.zeros(grey.shape, np.uint8)
-    cv2.drawContours(mask, [contour], -1, 255, -1)
-    mean_color = cv2.mean(img, mask=mask)
     
     
+    feature_dict = {
+        'area': area,
+        'perimeter': perimeter,
+        'aspect_ratio': aspect_ratio,
+        'circularity': circularity,
+        'mean_color_b': mean_color[0],
+        'mean_color_g': mean_color[1],
+        'mean_color_r': mean_color[2]
+    }
+    return feature_dict
+
     feature_dict = {
         'area': area,
         'perimeter': perimeter,
@@ -147,7 +149,7 @@ if __name__ == '__main__':
     # Load the model
     df = pd.read_csv('features.csv')
     max_area = df['area'].max()
-    min_area = df['area'].min()
+    min_area = df['area'].min()*3
     svm = joblib.load('svm_model.pkl')
     
     for file in testFiles:
@@ -155,7 +157,7 @@ if __name__ == '__main__':
         img = cv2.resize(img, (500, 500))
         #crop image pixels on borders by 10%
         img = img[20:-20, 20:-20]
-        bounding_box_img, label_counter =compute_informations(img.copy())
+        bounding_box_img, label_counter =compute_informations(img.copy(),min_area,max_area,svm,df)
         #make figure have the same height as the image
         fig = plt.figure(figsize=(10, 6))
         axs = fig.subplot_mosaic(

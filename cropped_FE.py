@@ -4,17 +4,43 @@ import os
 import pandas as pd
 from tqdm.auto import tqdm
 from skimage.measure import shannon_entropy
+from scipy.signal import correlate2d
+from skimage.feature import graycomatrix, graycoprops
 # Function to check if contour touches border
 def touches_border(contour, img_width, img_height):
     x, y, w, h = cv.boundingRect(contour)
     return x == 0 or y == 0 or x + w >= img_width or y + h >= img_height
+
+def compute_autocorrelation(gray_img):
+    autocorr = correlate2d(gray_img, gray_img, mode='full')
+    central_region = autocorr[gray_img.shape[0]//2-5:gray_img.shape[0]//2+5,
+                              gray_img.shape[1]//2-5:gray_img.shape[1]//2+5]
+    return np.mean(central_region), np.std(central_region)
+
+def compute_fractal_dimension(binary_img):
+    # Box-counting method for fractal dimension
+    sizes = np.arange(2, 10)
+    counts = [np.sum(binary_img[::s, ::s]) for s in sizes]
+    coeffs = np.polyfit(np.log(sizes), np.log(counts), 1)
+    return coeffs[0]
+
+
+
+def compute_glcm_features(gray_img, distances=[1], angles=[0, np.pi/4, np.pi/2, 3*np.pi/4]):
+    glcm = graycomatrix(gray_img, distances=distances, angles=angles, levels=256, symmetric=True, normed=True)
+    contrast = graycoprops(glcm, 'contrast').mean()
+    correlation = graycoprops(glcm, 'correlation').mean()
+    energy = graycoprops(glcm, 'energy').mean()
+    entropy = -np.sum(glcm * np.log2(glcm + 1e-10))  # Add small value to avoid log(0)
+    return contrast, correlation, energy, entropy
+
+
 
 def extract_contour_features(img=None,contour=None):
     cnt = contour
     area = cv.contourArea(cnt)
     perimeter = cv.arcLength(cnt, True)
     x, y, w, h = cv.boundingRect(cnt)
-    aspect_ratio = w / h
     circularity = (4 * 3.1415 * area) / (perimeter ** 2)
     mask = np.zeros(img.shape[:2], np.uint8)
     cv.drawContours(mask, [cnt], -1, 255, -1)
@@ -30,6 +56,10 @@ def extract_contour_features(img=None,contour=None):
     color_std_g = mean_stddev[1][1][0]
     color_std_r = mean_stddev[1][2][0]
     entropy = shannon_entropy(img)
+    gray = cv.cvtColor(img, cv.COLOR_BGR2GRAY)
+    autocorrelation_mean, autocorrelation_std = compute_autocorrelation(gray)
+    fractal_dimension = compute_fractal_dimension(gray)
+    #contrast, correlation, energy, _ = compute_glcm_features(gray)
     feature_dict = {
         'circularity': circularity,
         'mean_color_b': mean_color[0],
@@ -40,7 +70,10 @@ def extract_contour_features(img=None,contour=None):
         'stddev_b': color_std_b,
         'stddev_g': color_std_g,
         'stddev_r': color_std_r,
-        'entropy': entropy
+        'entropy': entropy,
+        'autocorrelation_mean': autocorrelation_mean,
+        'autocorrelation_std': autocorrelation_std,
+        'fractal_dimension': fractal_dimension
         }
     return feature_dict
 

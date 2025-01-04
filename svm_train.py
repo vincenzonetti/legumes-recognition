@@ -4,7 +4,6 @@ from sklearn.svm import SVC
 from sklearn.preprocessing import StandardScaler
 from sklearn.pipeline import make_pipeline
 import pandas as pd
-from feature_extraction import extract_feature
 from sklearn.metrics import confusion_matrix
 import matplotlib.pyplot as plt
 from sklearn.decomposition import PCA
@@ -30,7 +29,7 @@ def plot_confusion_matrix(y_true, X_test, svm):
     plt.show()
 
 def train_svm(X_train, y_train, kernel='linear', C=1, gamma='scale'):
-    svm = make_pipeline(StandardScaler(), SVC(kernel=kernel, C=1))
+    svm = make_pipeline(StandardScaler(), SVC(kernel=kernel, C=C, gamma=gamma))
     svm.fit(X_train, y_train)
     return svm
 
@@ -102,7 +101,7 @@ if __name__ == '__main__':
     accuracy = svm.score(X_test, y_test)
     print(f'Accuracy: {accuracy}')
     plot_confusion_matrix(y_test, X_test, svm)
-    #TSNE_plot_data(X_train,y_train)
+    TSNE_plot_data(X_train,y_train)
     #PCA_plot_data(X_train,y_train)
     plot_decision_boundaries(X_train, y_train, svm)
     

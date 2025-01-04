@@ -57,9 +57,9 @@ def extract_contour_features(img=None,contour=None):
     color_std_r = mean_stddev[1][2][0]
     entropy = shannon_entropy(img)
     gray = cv.cvtColor(img, cv.COLOR_BGR2GRAY)
-    autocorrelation_mean, autocorrelation_std = compute_autocorrelation(gray)
+    #autocorrelation_mean, autocorrelation_std = compute_autocorrelation(gray)
     fractal_dimension = compute_fractal_dimension(gray)
-    #contrast, correlation, energy, _ = compute_glcm_features(gray)
+    contrast, correlation, _, entropy_glcm = compute_glcm_features(gray)
     feature_dict = {
         'circularity': circularity,
         'mean_color_b': mean_color[0],
@@ -71,9 +71,10 @@ def extract_contour_features(img=None,contour=None):
         'stddev_g': color_std_g,
         'stddev_r': color_std_r,
         'entropy': entropy,
-        'autocorrelation_mean': autocorrelation_mean,
-        'autocorrelation_std': autocorrelation_std,
-        'fractal_dimension': fractal_dimension
+        'fractal_dimension': fractal_dimension,
+        'contrast': contrast,
+        'correlation': correlation,
+        'entropy_glcm': entropy_glcm
         }
     return feature_dict
 

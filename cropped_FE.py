@@ -3,6 +3,7 @@ import cv2 as cv
 import os
 import pandas as pd
 from tqdm.auto import tqdm
+from skimage.measure import shannon_entropy
 # Function to check if contour touches border
 def touches_border(contour, img_width, img_height):
     x, y, w, h = cv.boundingRect(contour)
@@ -18,14 +19,28 @@ def extract_contour_features(img=None,contour=None):
     mask = np.zeros(img.shape[:2], np.uint8)
     cv.drawContours(mask, [cnt], -1, 255, -1)
     mean_color = cv.mean(img, mask=mask)
+    (x,y), radius = cv.minEnclosingCircle(cnt)
+    
+    area = cv.contourArea(cnt)
+    perimeter = cv.arcLength(cnt, True)
+    #area and perimeter confuse the classifier because they depend on how much we zoom in the image thus they will be not used
+    #show this in the report
+    mean_stddev = cv.meanStdDev(img, mask=mask)
+    color_std_b = mean_stddev[1][0][0]
+    color_std_g = mean_stddev[1][1][0]
+    color_std_r = mean_stddev[1][2][0]
+    entropy = shannon_entropy(img)
     feature_dict = {
-        'area': area,
-        'perimeter': perimeter,
-        'aspect_ratio': aspect_ratio,
         'circularity': circularity,
         'mean_color_b': mean_color[0],
         'mean_color_g': mean_color[1],
-        'mean_color_r': mean_color[2]
+        'mean_color_r': mean_color[2],
+        'radius': radius,
+        'extent': area / (w * h),
+        'stddev_b': color_std_b,
+        'stddev_g': color_std_g,
+        'stddev_r': color_std_r,
+        'entropy': entropy
         }
     return feature_dict
 

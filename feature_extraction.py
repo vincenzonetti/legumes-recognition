@@ -3,121 +3,137 @@ import cv2 as cv
 import os
 import pandas as pd
 from tqdm.auto import tqdm
+from skimage.measure import shannon_entropy
+from scipy.signal import correlate2d
+from skimage.feature import graycomatrix, graycoprops
 # Function to check if contour touches border
 def touches_border(contour, img_width, img_height):
     x, y, w, h = cv.boundingRect(contour)
     return x == 0 or y == 0 or x + w >= img_width or y + h >= img_height
 
+def compute_autocorrelation(gray_img):
+    autocorr = correlate2d(gray_img, gray_img, mode='full')
+    central_region = autocorr[gray_img.shape[0]//2-5:gray_img.shape[0]//2+5,
+                              gray_img.shape[1]//2-5:gray_img.shape[1]//2+5]
+    return np.mean(central_region), np.std(central_region)
+
+def compute_fractal_dimension(binary_img):
+    # Box-counting method for fractal dimension
+    sizes = np.arange(2, 10)
+    counts = [np.sum(binary_img[::s, ::s]) for s in sizes]
+    coeffs = np.polyfit(np.log(sizes), np.log(counts), 1)
+    return coeffs[0]
+
+
+
+def compute_glcm_features(gray_img, distances=[1], angles=[0, np.pi/4, np.pi/2, 3*np.pi/4]):
+    glcm = graycomatrix(gray_img, distances=distances, angles=angles, levels=256, symmetric=True, normed=True)
+    contrast = graycoprops(glcm, 'contrast').mean()
+    correlation = graycoprops(glcm, 'correlation').mean()
+    energy = graycoprops(glcm, 'energy').mean()
+    entropy = -np.sum(glcm * np.log2(glcm + 1e-10))  # Add small value to avoid log(0)
+    return contrast, correlation, energy, entropy
+
+
+
 def extract_contour_features(img=None,contour=None):
-    #thresh = cv.adaptiveThreshold(imgGrey, 255, cv.ADAPTIVE_THRESH_MEAN_C, cv.THRESH_BINARY, 11, 2)
-    grey = cv.cvtColor(img, cv.COLOR_BGR2GRAY)
+    img_height, img_width = img.shape[:2]
     cnt = contour
     area = cv.contourArea(cnt)
     perimeter = cv.arcLength(cnt, True)
     x, y, w, h = cv.boundingRect(cnt)
-    aspect_ratio = w / h
     circularity = (4 * 3.1415 * area) / (perimeter ** 2)
-    mask = np.zeros(grey.shape, np.uint8)
+    mask = np.zeros(img.shape[:2], np.uint8)
     cv.drawContours(mask, [cnt], -1, 255, -1)
     mean_color = cv.mean(img, mask=mask)
+    (x,y), radius = cv.minEnclosingCircle(cnt)
+    
+    area = cv.contourArea(cnt)
+    perimeter = cv.arcLength(cnt, True)
+    #area and perimeter confuse the classifier because they depend on how much we zoom in the image thus they will be not used
+    #show this in the report
+    mean_stddev = cv.meanStdDev(img, mask=mask)
+    color_std_b = mean_stddev[1][0][0]
+    color_std_g = mean_stddev[1][1][0]
+    color_std_r = mean_stddev[1][2][0]
+    entropy = shannon_entropy(img)
+    gray = cv.cvtColor(img, cv.COLOR_BGR2GRAY)
+    #autocorrelation_mean, autocorrelation_std = compute_autocorrelation(gray)
+    fractal_dimension = compute_fractal_dimension(gray)
+    contrast, correlation, _, entropy_glcm = compute_glcm_features(gray)
+    normalized_radius = radius / min(w, h) 
+    normalized_area = area / (img_width * img_height)
+    normalized_perimeter = perimeter / (img_width + img_height)
+    median_color_b = np.median(img[..., 0][mask == 255])
+    median_color_g = np.median(img[..., 1][mask == 255])
+    median_color_r = np.median(img[..., 2][mask == 255])
+    hist_b = cv.calcHist([img], [0], mask, [256], [0, 256]).flatten()
+    hist_g = cv.calcHist([img], [1], mask, [256], [0, 256]).flatten()
+    hist_r = cv.calcHist([img], [2], mask, [256], [0, 256]).flatten()
+
     feature_dict = {
-        'area': area,
-        'perimeter': perimeter,
-        'aspect_ratio': aspect_ratio,
         'circularity': circularity,
         'mean_color_b': mean_color[0],
         'mean_color_g': mean_color[1],
-        'mean_color_r': mean_color[2]
+        'mean_color_r': mean_color[2],
+        'radius': radius,
+        'extent': area / (w * h),
+        'normalized_radius': normalized_radius,
+        'normalized_area': normalized_area,
+        'normalized_perimeter': normalized_perimeter,
+        'median_color_b': median_color_b,
+        'median_color_g': median_color_g,
+        'median_color_r': median_color_r,
+        'entropy': entropy,
+        'fractal_dimension': fractal_dimension,
+        'contrast': contrast,
+        'correlation': correlation,
+        'entropy_glcm': entropy_glcm
         }
+    for i,hist in enumerate([hist_b, hist_g, hist_r]):
+        for j in range(256):
+            feature_dict[f'hist_{i}_{j}'] = hist[j]
     return feature_dict
 
-def compute_crop_and_keypoints(img=None,blur=None,gray=None):
-    gray = cv.cvtColor(img, cv.COLOR_BGR2GRAY)
-    sift = cv.SIFT_create()
-    keypoints, descriptors = sift.detectAndCompute(gray, None)
-    
-    #img = cv.drawKeypoints(img, keypoints, None)
-    #crop the area around most important keypoint
-    keypoints = sorted(keypoints, key=lambda x: x.response, reverse=True)
-    try:
-        x, y = keypoints[0].pt
-        x, y = int(x), int(y)
-    except IndexError:
-        #x,y in the image center
-        x, y = 250, 250
-    h, w = 100, 100
-    crop = img[y-h:y+h, x-w:x+w]
-    #key points and descriptors on the cropped image
-    gray = cv.cvtColor(crop, cv.COLOR_BGR2GRAY)
-    keypoints, descriptors = sift.detectAndCompute(gray, None)
-
-    #img = cv.drawKeypoints(crop, keypoints, None)
-    num_keypoints = len(keypoints)
-    
-    if(num_keypoints == 0): avg_keypoint_size = 0
-    else: avg_keypoint_size = np.mean([keypoint.size for keypoint in keypoints])
-    if(descriptors is None):
-        descriptor_mean = 0
-        descriptor_std = 0
-    else:
-        descriptor_mean = np.mean(descriptors)
-        descriptor_std = np.std(descriptors)
-
-    feature_dict = {
-        'num_keypoints': num_keypoints,
-        'avg_keypoint_size': avg_keypoint_size,
-        'descriptor_mean': descriptor_mean,
-        'descriptor_std': descriptor_std
-    }
-    return crop,feature_dict
 
 def compute_contours(img):
-    grey = cv.cvtColor(img, cv.COLOR_BGR2GRAY)
-    height, width = grey.shape
+    gray = cv.cvtColor(img, cv.COLOR_BGR2GRAY)
+    #binary treshold
+    _, thresh = cv.threshold(gray, 0, 255, cv.THRESH_BINARY_INV + cv.THRESH_OTSU)
+    kernel = cv.getStructuringElement(cv.MORPH_RECT, (5, 5))
+    closed = cv.morphologyEx(thresh, cv.MORPH_CLOSE, kernel)
+    dilated = cv.dilate(closed, kernel, iterations=2)
+    eroded = cv.erode(dilated, kernel, iterations=1)
+    edge = cv.Canny(eroded, 30, 150)
 
-    clahe = cv.createCLAHE(clipLimit=5.0, tileGridSize=(8, 8))
-    blur = cv.bilateralFilter(grey, d=5, sigmaColor=20, sigmaSpace=30)
-    img_clahe = clahe.apply(blur)
+    contours, _ = cv.findContours(edge, cv.RETR_TREE, cv.CHAIN_APPROX_SIMPLE)
     
-    treshold = cv.Canny(img_clahe,100,150)
-    #check if all edges are 0
-    if np.all(treshold == 0):
-        treshold = cv.adaptiveThreshold(img_clahe, 255, cv.ADAPTIVE_THRESH_MEAN_C, cv.THRESH_BINARY, 11, 2)
-    contours, hierarchy = cv.findContours(treshold, cv.RETR_CCOMP, cv.CHAIN_APPROX_SIMPLE)
+    all_points = np.vstack(contours)
+    hull = cv.convexHull(all_points)
+    #img = cv.drawContours(img, [hull], -1, (0, 255, 0), 3)
+    return hull
 
-    filtered_contours = [cnt for cnt in contours if not touches_border(cnt, width, height)]
-    sorted_contours = sorted(filtered_contours, key=lambda c: cv.contourArea(cv.convexHull(c)), reverse=True)
-    #img = cv.drawContours(img, sorted_contours[:1], -1, (0, 255, 0), 3)
-    #cv.imshow('contours', img)
-    #cv.waitKey(0)
-    #cv.destroyAllWindows()
-    return sorted_contours
-    
 if __name__ == '__main__':
     
     df = pd.DataFrame(columns=['label','area', 'perimeter', 'aspect_ratio', 'circularity', 'mean_color_b', 'mean_color_g', 'mean_color_r'])
     
-    PATH = 'SIV_dataset/'
+    PATH = 'SIV_dataset/Cropped/'  #<#
     ## all images are in this folder, check them all
     subdirectories = os.listdir(PATH)
     #filter out files
     subdirectories = [subdir for subdir in subdirectories if os.path.isdir(os.path.join(PATH, subdir))]
     
     for subdir in tqdm(subdirectories,desc='Processing Folder', position=0):
-        if subdir == 'Test':
-            continue
         images = os.listdir(os.path.join(PATH, subdir))
         images = [img for img in images if img.endswith('.jpg')]
         for filename in tqdm(images,desc='Processing Image', position=1):
             file_path = os.path.join(PATH, subdir, filename)
             img=cv.imread(file_path)
-            img = cv.resize(img, (500, 500))
-            gray = cv.cvtColor(img, cv.COLOR_BGR2GRAY)            
-            crop, feature_dict = compute_crop_and_keypoints(img)
-            contours = compute_contours(crop)
-            contorus_features = extract_contour_features(crop,contours[0])
-            feature_dict = {**feature_dict, **contorus_features}
-
+            img = cv.resize(img, (64, 64))
+            contour = compute_contours(img.copy())
+            feature_dict = extract_contour_features(img=img,contour=contour)
+            #keypoint_features(img=combined)
+            
             for key in feature_dict:
                 feature_dict[key] = round(feature_dict[key], 2)
             new_row = {'label': subdir, **feature_dict}

@@ -9,60 +9,18 @@ import matplotlib.pyplot as plt
 from sklearn.decomposition import PCA
 from sklearn.inspection import DecisionBoundaryDisplay
 from sklearn.manifold import TSNE
-
+from random_forest_train import plot_info
 
 
 import random
 import os
 import joblib
 
-def plot_confusion_matrix(y_true, X_test, svm):
-    y_pred = svm.predict(X_test)
-    cm = confusion_matrix(y_true, y_pred)
-    plt.matshow(cm, cmap='Blues')
-    plt.colorbar()
-    plt.xlabel('Predicted')
-    plt.ylabel('True')
-    plt.title('Confusion Matrix')
-    plt.xticks(range(len(set(y_true))), set(y_true))
-    plt.yticks(range(len(set(y_true))), set(y_true))
-    plt.show()
 
 def train_svm(X_train, y_train, kernel='linear', C=1, gamma='scale'):
     svm = make_pipeline(StandardScaler(), SVC(kernel=kernel, C=C, gamma=gamma))
     svm.fit(X_train, y_train)
     return svm
-
-def TSNE_plot_data(X_train, y_train):
-    X_embedded = TSNE(n_components=2).fit_transform(X_train)
-    labels = set(y_train)
-    colors = plt.cm.viridis(np.linspace(0, 1, len(labels)))
-    for i, label in enumerate(labels):
-        plt.scatter(X_embedded[y_train == label, 0], X_embedded[y_train == label, 1], color=colors[i], label=label)
-    plt.legend()
-    plt.axis('off')
-    plt.title('TSNE plot of training data')
-    plt.show()
-
-def PCA_plot_data(X_train, y_train):
-    pca = PCA(n_components=2)
-    X_train = pca.fit_transform(X_train)
-    labels = set(y_train)
-    colors = plt.cm.viridis(np.linspace(0, 1, len(labels)))
-    for i, label in enumerate(labels):
-        plt.scatter(X_train[y_train == label, 0], X_train[y_train == label, 1], color=colors[i], label=label)
-    plt.legend()
-    plt.axis('off')
-    plt.title('PCA plot of training data')
-    plt.show()
-
-def plot_decision_boundaries(X_train, y_train, svm):
-    pca = PCA(n_components=2)
-    X_train = pca.fit_transform(X_train)
-    svm.fit(X_train, y_train)
-    DecisionBoundaryDisplay.from_estimator(svm, X_train)
-    plt.show()
-
 
 def grid_search_best_parameters(X_train,y_train):
     C_range = [1e-2, 1, 1e2]
@@ -80,29 +38,25 @@ def grid_search_best_parameters(X_train,y_train):
     sorted_results = sorted(results.items(), key=lambda x: x[1], reverse=True)
     return sorted_results
 
-if __name__ == '__main__':
-    df = pd.read_csv('features.csv')
-    feature_vectors = df.drop('label', axis=1).values
-    labels = df['label'].values
-    USE_PCA = False
-    PCA_COMPONENTS = 5
-    X = np.array(feature_vectors)  # Feature vectors
-    y = np.array(labels)  # Labels for the seeds
-    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
-    kernel = 'rbf'
-    if USE_PCA:
-        pca = PCA(n_components=PCA_COMPONENTS)
-        X_train = pca.fit_transform(X_train)
-        X_test = pca.transform(X_test)
 
-    svm = train_svm(X_train, y_train,kernel=kernel)
-    joblib.dump(svm, 'svm_model.pkl')
-    #svm = joblib.load('svm_model.pkl')
-    accuracy = svm.score(X_test, y_test)
-    print(f'Accuracy: {accuracy}')
-    plot_confusion_matrix(y_test, X_test, svm)
-    TSNE_plot_data(X_train,y_train)
-    #PCA_plot_data(X_train,y_train)
-    plot_decision_boundaries(X_train, y_train, svm)
+FILE = 'features.csv'
+df = pd.read_csv(FILE)
+feature_vectors = df.drop('label', axis=1).values
+labels = df['label'].values
+USE_PCA = False
+PCA_COMPONENTS = 5
+X = np.array(feature_vectors)  # Feature vectors
+y = np.array(labels)  # Labels for the seeds
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=random.randint(0, 1000))
+kernel = 'rbf'
+if USE_PCA:
+    pca = PCA(n_components=PCA_COMPONENTS)
+    X_train = pca.fit_transform(X_train)
+    X_test = pca.transform(X_test)
+svm = train_svm(X_train, y_train,kernel=kernel)
+joblib.dump(svm, 'svm_model.pkl')
+accuracy = svm.score(X_test, y_test)
+print(f'Accuracy: {accuracy}')
+plot_info(X_train, y_train, y_test, X_test, svm)
     
     

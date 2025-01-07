@@ -6,4 +6,4 @@ scikit_learn==1.6.0
 scipy==1.15.0
 skimage==0.0
 tqdm==4.67.1
-opencv = 4.10.0
+opencv == 4.10.0

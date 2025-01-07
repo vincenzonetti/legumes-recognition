@@ -78,17 +78,17 @@ def forest_train(X_train, y_train):
     return rf
 
 #load dataframe
-
-df = pd.read_csv('features.csv')
-feature_vectors = df.drop('label', axis=1).values
-labels = df['label'].values
-
-X = np.array(feature_vectors)  # Feature vectors
-y = np.array(labels)  # Labels for the seeds
-X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
-# Train Random Forest Classifier
-rf = forest_train(X_train, y_train)
-accuracy = rf.score(X_test, y_test)
-print(f'Accuracy: {accuracy}')
-joblib.dump(rf, 'random_forest_model.pkl')
-plot_info(X_train, y_train, y_test, X_test, rf)
+def main():
+    df = pd.read_csv('features.csv')
+    feature_vectors = df.drop('label', axis=1).values
+    labels = df['label'].values
+    
+    X = np.array(feature_vectors)  # Feature vectors
+    y = np.array(labels)  # Labels for the seeds
+    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+    # Train Random Forest Classifier
+    rf = forest_train(X_train, y_train)
+    accuracy = rf.score(X_test, y_test)
+    print(f'Accuracy: {accuracy}')
+    joblib.dump(rf, 'random_forest_model.pkl')
+    plot_info(X_train, y_train, y_test, X_test, rf)

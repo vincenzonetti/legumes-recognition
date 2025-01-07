@@ -38,25 +38,25 @@ def grid_search_best_parameters(X_train,y_train):
     sorted_results = sorted(results.items(), key=lambda x: x[1], reverse=True)
     return sorted_results
 
-
-FILE = 'features.csv'
-df = pd.read_csv(FILE)
-feature_vectors = df.drop('label', axis=1).values
-labels = df['label'].values
-USE_PCA = False
-PCA_COMPONENTS = 5
-X = np.array(feature_vectors)  # Feature vectors
-y = np.array(labels)  # Labels for the seeds
-X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=random.randint(0, 1000))
-kernel = 'rbf'
-if USE_PCA:
-    pca = PCA(n_components=PCA_COMPONENTS)
-    X_train = pca.fit_transform(X_train)
-    X_test = pca.transform(X_test)
-svm = train_svm(X_train, y_train,kernel=kernel)
-joblib.dump(svm, 'svm_model.pkl')
-accuracy = svm.score(X_test, y_test)
-print(f'Accuracy: {accuracy}')
-plot_info(X_train, y_train, y_test, X_test, svm)
-    
-    
+def main():
+    FILE = 'features.csv'
+    df = pd.read_csv(FILE)
+    feature_vectors = df.drop('label', axis=1).values
+    labels = df['label'].values
+    USE_PCA = False
+    PCA_COMPONENTS = 5
+    X = np.array(feature_vectors)  # Feature vectors
+    y = np.array(labels)  # Labels for the seeds
+    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=random.randint(0, 1000))
+    kernel = 'rbf'
+    if USE_PCA:
+        pca = PCA(n_components=PCA_COMPONENTS)
+        X_train = pca.fit_transform(X_train)
+        X_test = pca.transform(X_test)
+    svm = train_svm(X_train, y_train,kernel=kernel)
+    joblib.dump(svm, 'svm_model.pkl')
+    accuracy = svm.score(X_test, y_test)
+    print(f'Accuracy: {accuracy}')
+    plot_info(X_train, y_train, y_test, X_test, svm)
+        
+        

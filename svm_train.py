@@ -22,6 +22,22 @@ def train_svm(X_train, y_train, kernel='linear', C=1, gamma='scale'):
     svm.fit(X_train, y_train)
     return svm
 
+#def grid_search_best_parameters(X_train,y_train):
+#    C_range = [1e-2, 1, 1e2]
+#    gamma_range = [1e-1, 1, 1e1]
+#    kernel_range = ['linear', 'rbf', 'poly', 'sigmoid']
+#    best_accuracy = 0
+#    results = {}
+#    for C in C_range:
+#        for gamma in gamma_range:
+#            for kernel in kernel_range:
+#                svm = train_svm(X_train, y_train, C=C, gamma=gamma, kernel=kernel)
+#                accuracy = svm.score(X_test, y_test)
+#                results[(C, gamma, kernel)] = accuracy
+#    #sort the results by accuracy
+#    sorted_results = sorted(results.items(), key=lambda x: x[1], reverse=True)
+#    return sorted_results
+
 def main():
     FILE = 'features.csv'
     df = pd.read_csv(FILE)
@@ -42,4 +58,5 @@ def main():
     accuracy = svm.score(X_test, y_test)
     print(f'Accuracy: {accuracy}')
     plot_info(X_train, y_train, y_test, X_test, svm)
-
+        
+        

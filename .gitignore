@@ -171,5 +171,4 @@ cython_debug/
 .pypirc
 #dataset
 *dataset/
-*.csv
 svm_model.pkl

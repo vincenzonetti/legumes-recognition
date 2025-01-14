@@ -14,6 +14,9 @@ This project provides a simple workflow for:
 
 ## Scripts and Usage
 
+### 0) Dataset setup
+• Download the dataset and make sure the folder is named SIV_dataset.
+
 ### 1) feature_extraction.py
 • Extracts relevant features from seed images expected to contain exactly one object.  
 • Saves all extracted features into a CSV file called `features.csv`.

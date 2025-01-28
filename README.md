@@ -1,6 +1,5 @@
 # legumes-recognition
-SIV project for legumes recognition
-
+The legumes-recognition project is a university project that uses computer vision techniques for seed recognition. It provides a workflow for feature extraction, training classifiers (SVM or Random Forest), and detecting/labeling multiple objects in images. The project utilizes OpenCV for image processing and scikit-learn for classification.
 # Project Overview
 This project provides a simple workflow for:
 1. Feature extraction from images containing a single object.
